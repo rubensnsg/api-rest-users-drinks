@@ -14,11 +14,11 @@ no arquivo conn.php e o comandos estão em bd.sql
 
 A maioria dos cenários tem como resposta um json com três itens
 
-  * 1- Status: onde 0 = error, 1 = OK e 2 = WARNING;
+  1. status: onde 0 = error, 1 = OK e 2 = WARNING;
 
-  * 2- response: um comentário interno sobre o script executado;
+  2. response: um comentário interno sobre o script executado;
 
-  * 3- dataArray: array com as saídas pedidas no teste.
+  3. dataArray: array com as saídas pedidas no teste.
 
 
 Para executar os tratamentos opcionais segue a tabela abaixo:
