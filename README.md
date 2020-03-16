@@ -1,6 +1,8 @@
 # api-rest-users-drinks
 Exercício realizado para um teste de emprego
+
 Cargo: Developer PHP
+
 Empresa: https://mosyle.com/
 
 Trata-se de um backend API para completar os itens dentro do Desafio.php
