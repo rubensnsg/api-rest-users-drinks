@@ -1,12 +1,7 @@
 # api-rest-users-drinks
 Cargo de Developer PHP para a empresa Mosyle. Exercício realizado para um teste de emprego.
 
-Trata-se de um backend API para completar os itens dentro do Desafio.php
-Lembrando que o único item não desenvolvido é o item descrito abaixo:
-
-  > Tratamento Opcional:
-  
-    Paginação na lista de usuários
+Trata-se de um backend API para completar os itens dentro do Desafio.pdf
 
 Vale ressaltar que criamos duas tabela no banco de dados MySQL em uma
 versão online de graça com uma tabela até certo tamanho. A conexão está
@@ -27,6 +22,7 @@ Para executar os tratamentos opcionais segue a tabela abaixo:
 | ------------------ | ------------- |
 | /historic/:iduser  |  POST         |
 | /ranking           |  POST         |
+| /page/:pageNumber  |  POST         |
 
 
 Contém um .htaccess para o redirecionamento simples dentro da pasta
