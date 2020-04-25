@@ -62,14 +62,32 @@ function executeProgram($rqMethod, $path = array(), $json, $pdo, $md5){
         $columns = array("iduser", "name", "email", "(SELECT COUNT(mlDrink) FROM drinks WHERE userID = iduser) qtdDrink");
         $where = "ORDER BY iduser ASC";
         $parameters = array();
+        $pageNumberGet = 1;
+        $quantityPerPage = 2;
 
-        if(isset($path[1]) && $path[1] <> "" && is_numeric($path[1])){
-          $where = "WHERE iduser = ? ".$where;
-          $parameters[0] = $path[1];
+        if(isset($path[1]) && $path[1] <> ""){
+
+          if(is_numeric($path[1])){
+            $where = "WHERE iduser = ? ".$where;
+            $parameters[0] = $path[1];
+
+          }elseif($path[1] == "page"){
+
+            if(isset($path[2]) && is_numeric($path[2])){
+              $pageNumberGet = $path[2];
+            }
+
+          }else{
+
+          }
 
         }else{
 
         }
+
+        $paginationSQL = PaginationSelect($table, "iduser", $where, $parameters, $pageNumberGet, $quantityPerPage, $pdo);
+        $where .= $paginationSQL['limitSQL'];
+        // exit(json_encode($where));
 
         $rowSQL = selectSQL($table, $columns, $where, $parameters, $pdo);
 
@@ -82,9 +100,14 @@ function executeProgram($rqMethod, $path = array(), $json, $pdo, $md5){
                                       "drink_counter" => $value['qtdDrink']);
           }
 
-          $jsonExit = array('total' => count($rowSQL), 'rows' => $selectSQl);
+          $jsonExit = array('RowPerPage' => (string) $quantityPerPage,
+                            'TotalRows' => $paginationSQL['countSQL'],
+                            'FirstPage' => $paginationSQL['paginationStart'],
+                            'ActualPage' => $paginationSQL['paginationNow'],
+                            'LastPage' => $paginationSQL['paginationEnd'],
+                            'Rows' => $selectSQl);
 
-          /*
+          /* countSQL
           print_r($jsonExit);
           exit;
           */
@@ -187,17 +210,23 @@ function executeProgram($rqMethod, $path = array(), $json, $pdo, $md5){
           $rowSQL = selectSQL($table, $columns, $where, $parameters, $pdo);
           //print_r($rowSQL);
 
-          $table2 = "bvzfdagnfqepipz70gyw.drinks";
-          insertSQL($table2, array('userID' => $rowSQL[0]['iduser'],
-                                  'dateDrink' => date("Y-m-d H:i:s"),
-                                  'mlDrink' => $json['mlDrink']), $pdo);
+          if(count($rowSQL) > 0){
 
-          $jsonExit = array('iduser' => $rowSQL[0]['iduser'],
-                            'email' => $rowSQL[0]['email'],
-                            'name' => $rowSQL[0]['name'],
-                            'drink_counter' => ($rowSQL[0]['qtdDrink'] + 1) );
+            $table2 = "bvzfdagnfqepipz70gyw.drinks";
+            insertSQL($table2, array('userID' => $rowSQL[0]['iduser'],
+                                    'dateDrink' => date("Y-m-d H:i:s"),
+                                    'mlDrink' => $json['mlDrink']), $pdo);
 
-          finalDialogue(1, "Insert realizado com sucesso", $jsonExit);
+            $jsonExit = array('iduser' => $rowSQL[0]['iduser'],
+                              'email' => $rowSQL[0]['email'],
+                              'name' => $rowSQL[0]['name'],
+                              'drink_counter' => ($rowSQL[0]['qtdDrink'] + 1) );
+
+            finalDialogue(1, "Insert realizado com sucesso", $jsonExit);
+
+          }else{
+            finalDialogue(2, "Não existe usuário com o ID informado. Por favor, verifique o campo e tente novamente.", null);
+          }
 
         }else{
           checkStringNoNull($json, 'name');
@@ -521,6 +550,48 @@ function selectSQL($table, $columns, $where, $parameters, $pdo){
 
   return $returnValues;
 }
+
+
+/*
+  string  $table - table name on Database
+  array   $idColumn - idColumn from table SQL
+  string  $where - Clause where complete to select on mysql, Opcional group by, order
+  array   $parameters - only values, string to bindValue
+  number  $pageNumberGet - only number, number to page active
+  number  $quantityPerPage - only number, number the quantity to show on page 
+          $pdo - var Connection
+
+  return = array FirstPage = paginationStart, ActualPage = paginationNow, LastPage = paginationEnd, sql limit = limitSQL
+*/
+function PaginationSelect($table, $idColumn, $where, $parameters, $pageNumberGet, $quantityPerPage, $pdo){
+  
+  if(isset($quantityPerPage) && is_numeric($quantityPerPage) && $quantityPerPage > 0){
+    $pageLength =  $quantityPerPage;
+  }else{
+    $pageLength =  "12";
+  }
+
+  $numberStart = ($pageNumberGet * $pageLength) - $pageLength;
+  $limitSQL = " LIMIT " . $numberStart . ", " . $pageLength . "";
+  // exit(json_encode($limitSQL));
+
+  $numberSQL = selectSQL($table, array("COUNT(".$idColumn.") AS total"), $where, $parameters, $pdo);
+  if (isset($numberSQL[0][0]) && is_numeric($numberSQL[0][0]) && $numberSQL[0][0] > 0) { // Quantidade de linhas no SELECT
+    $totalNumberSQL = $numberSQL[0][0];
+  }
+
+  $paginationEnd = (string) (ceil($totalNumberSQL / $pageLength));
+
+
+  $arrayReturn = array('paginationStart' => '1',
+                        'paginationNow' => $pageNumberGet,
+                        'paginationEnd' => $paginationEnd,
+                        'countSQL' => $totalNumberSQL,
+                        'limitSQL' => $limitSQL);
+
+  return $arrayReturn;
+}
+
 
 /*
   array   $json - all values
